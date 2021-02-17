@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 import random
 import math
@@ -24,6 +26,7 @@ class Snake:
         self.snakeList = snakeList
         self.game_over = False
         self.player_failed = False
+        self.is_a_star_mode = False
 
         pygame.display.update()
         pygame.display.set_caption('Snake by Guy')
@@ -94,6 +97,9 @@ class Snake:
                             self.game_over = True
                             break
 
+            if self.is_a_star_mode:
+                self.a_star_madness()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     Snake.game_over = True
@@ -133,6 +139,34 @@ class Snake:
         pygame.quit()
         quit()
 
+    def a_star_madness(self):
+        pygame.draw.rect(Snake.DIS, colors.BLACK,
+                         [self.snakeList[1].getHead().getRow(),
+                          self.snakeList[1].getHead().getCol(), 10, 10])
+        pygame.display.update()
+        self.snakeList[1].setColor(colors.BLACK)
+
+        player = self.snakeList[0]
+        possible_moves = {"u": [0, self.snakeBlock], "d": [0, - self.snakeBlock], "r": [- self.snakeBlock, 0],
+                          "l": [self.snakeBlock, 0]}  # up, down, right, left
+        # player.setHeading("n")
+
+        # while not self.game_over:
+        #     for event in pygame.event.get():
+        #         if event.key != pygame.K_q:
+        heuristic_value = sys.maxsize
+        for heading, move in possible_moves.items():
+            temp_heuristic = abs(Snake.FOOD_ROW * 10 - (player.getHead().getRow() + move[0])) + \
+                             abs(Snake.FOOD_COL * 10 - (player.getHead().getCol() + move[1]))
+            if temp_heuristic < heuristic_value:
+                heuristic_value = temp_heuristic
+                player.setPosList(move)
+                player.setHeading(heading)
+
+        self.snakeList[0].setPlayerMoved(True)
+        self.check_position(0)
+
+
     def move_player(self, event, i):
         """
         catches arrow keys events and by that, sets the heading of each snake.
@@ -142,6 +176,9 @@ class Snake:
         """
 
         player = self.snakeList[i]
+
+        if event.key == pygame.K_h:
+            self.is_a_star_mode = True
 
         # player 1
         if i == 0:
@@ -215,7 +252,7 @@ class Snake:
             else:
                 self.score2 += 1
             myTime = self.snakeList[i].getTime()
-            inc = math.log(myTime, 15) # clock ticks become more frequent.
+            inc = math.log(myTime, 15)  # clock ticks become more frequent.
             self.snakeList[i].setTime(myTime + inc)
             self.is_eaten = False
 

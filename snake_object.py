@@ -151,5 +151,8 @@ class SnakeQ:
     def getColor(self):
         return self.color
 
+    def setColor(self, color):
+        self.color = color
+
     def setTime(self, time):
         self.time = time
