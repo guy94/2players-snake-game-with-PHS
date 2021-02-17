@@ -161,6 +161,12 @@ class Snake:
         quit()
 
     def a_star_madness(self):
+        """
+        Enables A* play mode.
+        when the player decides, he can change the game to computer self-play mode.
+        using heuristic the computer seeks the best way to get to the piece of food by itself.
+        :return:
+        """
         pygame.draw.rect(Snake.DIS, colors.BLACK,
                          [self.snakeList[1].getHead().getRow(),
                           self.snakeList[1].getHead().getCol(), 10, 10])
