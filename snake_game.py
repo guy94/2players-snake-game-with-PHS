@@ -27,6 +27,8 @@ class Snake:
         self.game_over = False
         self.player_failed = False
         self.is_a_star_mode = False
+        self.all_snake_positions = set()
+        self.eaten_self = False
 
         pygame.display.update()
         pygame.display.set_caption('Snake by Guy')
@@ -50,6 +52,14 @@ class Snake:
             Snake.DIS.blit(mesg3, [self.dis_W / 2 + 30, self.dis_H / 2 - 50])
 
         elif msg == "Score: ":
+            if not self.is_a_star_mode:
+                mesg = self.font.render("For A* madness press the 'h' key", True, colors.BLUE)
+                Snake.DIS.blit(mesg, [self.dis_W / 2 - 50, self.dis_H / 2 - 380])
+            else:
+                pygame.draw.rect(self.DIS, colors.BLACK, [self.dis_W / 2 - 50, self.dis_H / 2 - 380, 560, 50])
+                mesg = self.font.render("To quit A* madness press the 'q' key", True, colors.BLUE)
+                Snake.DIS.blit(mesg, [self.dis_W / 2 - 50, self.dis_H / 2 - 380])
+
             color1 = self.snakeList[0].getColor()
             mesg = self.font.render("Player1 " + msg + str(self.score1), True, color1)
             pygame.draw.rect(self.DIS, colors.BLACK, [self.dis_W / 2 - 190, self.dis_H / 2 - 390, 90, 50])
@@ -91,7 +101,7 @@ class Snake:
                     if eve.type == pygame.KEYDOWN:
                         if eve.key == pygame.K_y:
                             self.player_failed = False
-                            self.gameRestart()
+                            self.game_restart()
                         elif eve.key == pygame.K_n:
                             self.player_failed = False
                             self.game_over = True
@@ -105,6 +115,11 @@ class Snake:
                     Snake.game_over = True
                     break
                 if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q and self.is_a_star_mode:
+                        self.player_failed = False
+                        self.snakeList[1].setColor((0, 255, 255))
+                        self.game_restart()
+
                     self.move_player(event, 0)
                     self.move_player(event, 1)
 
@@ -118,6 +133,7 @@ class Snake:
                 pos = self.snakeList[i].getPosList()
                 self.snakeList[i].getHead().setRow(oldHeadRow + pos[0])
                 self.snakeList[i].getHead().setCol(oldHeadCol + pos[1])
+
                 pygame.draw.rect(Snake.DIS, self.snakeList[i].getColor(),
                                  [self.snakeList[i].getHead().getRow(),
                                   self.snakeList[i].getHead().getCol(), 10, 10])
@@ -129,6 +145,11 @@ class Snake:
                 if self.snakeList[i].getPlayerMoved():
                     pygame.draw.rect(Snake.DIS, colors.BLACK,
                                      [self.snakeList[i].getOldRow(), self.snakeList[i].getOldCol(), 10, 10])
+
+                    # if self.eaten_self:
+                    #     pygame.draw.rect(Snake.DIS, self.snakeList[0].getColor(),
+                    #                      [self.snakeList[i].getOldRow(), self.snakeList[i].getOldCol(), 10, 10])
+                    #     self.eaten_self = False
                     pygame.display.update()
 
             self.snakeList[0].getClock().tick(self.snakeList[0].getTime())
@@ -147,25 +168,23 @@ class Snake:
         self.snakeList[1].setColor(colors.BLACK)
 
         player = self.snakeList[0]
-        possible_moves = {"u": [0, self.snakeBlock], "d": [0, - self.snakeBlock], "r": [- self.snakeBlock, 0],
-                          "l": [self.snakeBlock, 0]}  # up, down, right, left
-        # player.setHeading("n")
+        possible_moves = {"u": [0, self.snakeBlock, "d"], "d": [0, - self.snakeBlock, "u"],
+                          "r": [- self.snakeBlock, 0, "l"],
+                          "l": [self.snakeBlock, 0, "r"]}  # up, down, right, left
 
-        # while not self.game_over:
-        #     for event in pygame.event.get():
-        #         if event.key != pygame.K_q:
         heuristic_value = sys.maxsize
         for heading, move in possible_moves.items():
-            temp_heuristic = abs(Snake.FOOD_ROW * 10 - (player.getHead().getRow() + move[0])) + \
-                             abs(Snake.FOOD_COL * 10 - (player.getHead().getCol() + move[1]))
-            if temp_heuristic < heuristic_value:
+            new_position = (player.getHead().getRow() + move[0], player.getHead().getCol() + move[1])
+            temp_heuristic = abs(Snake.FOOD_ROW * 10 - new_position[0]) + \
+                             abs(Snake.FOOD_COL * 10 - new_position[1])  # manhattan distance heuristic
+
+            if temp_heuristic < heuristic_value and move[2] != player.getHeading:
                 heuristic_value = temp_heuristic
                 player.setPosList(move)
                 player.setHeading(heading)
 
         self.snakeList[0].setPlayerMoved(True)
         self.check_position(0)
-
 
     def move_player(self, event, i):
         """
@@ -261,13 +280,15 @@ class Snake:
 
         if self.snakeList[i].getHead().getRow() > self.dis_H or self.snakeList[i].getHead().getRow() < 0 or \
                 self.snakeList[i].getHead().getCol() > self.dis_W or self.snakeList[i].getHead().getCol() < 0:
-            self.sideToSide(i)
+            self.side_to_side(i)
             # self.message("Loser!!!", self.yellow, i)
 
         temp = self.snakeList[i].getTail()
         head = self.snakeList[i].getHead()
         while temp is not head and self.snakeList[i].getSize() > 2:
-            if (head.getRow() == temp.getRow()) and (head.getCol() == temp.getCol()):
+            if (head.getRow() == temp.getRow()) and (head.getCol() == temp.getCol()) and not self.is_a_star_mode:
+                # if self.is_a_star_mode:
+                #     self.is_eaten = True
                 self.player_failed = True
                 self.message("Loser!!!", colors.YELLOW, i)
                 break
@@ -275,19 +296,20 @@ class Snake:
 
         otherTemp = self.snakeList[1 - i].getTail()
         otherHead = self.snakeList[1 - i].getHead()
-        while otherTemp is not otherHead and self.snakeList[1 - i].getSize() > 2:
+        while otherTemp is not otherHead and self.snakeList[1 - i].getSize() > 2 and not self.is_a_star_mode:
             if (head.getRow() == otherTemp.getRow()) and (head.getCol() == otherTemp.getCol()):
                 self.player_failed = True
                 self.message("Loser!!!", colors.YELLOW, i)
                 break
             otherTemp = otherTemp.getNext()
 
-    def gameRestart(self):
+    def game_restart(self):
         """
         If the players decided to play another game, new snakes are created instead of the previous ones.
         :return:
         """
         snakeLst = []
+        self.is_a_star_mode = False
         for i in range(len(self.snakeList)):
             color = self.snakeList[i].getColor()
             snake_to_add = snake_object.SnakeQ(color)
@@ -295,7 +317,7 @@ class Snake:
         new_snake = Snake(snakeLst)
         new_snake.game_loop()
 
-    def sideToSide(self, i):
+    def side_to_side(self, i):
         """
         Enables the snakes to move from side to side of the screen when hit the the frame. left to right, top to bottom,
         and vise versa.
