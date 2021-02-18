@@ -26,7 +26,7 @@ class Snake:
         self.snakeList = snakeList
         self.game_over = False
         self.player_failed = False
-        self.is_a_star_mode = False
+        self.is_a_phs_mode = False
         self.all_snake_positions = set()
         self.eaten_self = False
 
@@ -52,12 +52,12 @@ class Snake:
             Snake.DIS.blit(mesg3, [self.dis_W / 2 + 30, self.dis_H / 2 - 50])
 
         elif msg == "Score: ":
-            if not self.is_a_star_mode:
-                mesg = self.font.render("For A* madness press the 'h' key", True, colors.BLUE)
+            if not self.is_a_phs_mode:
+                mesg = self.font.render("For PHS madness press the 'h' key", True, colors.BLUE)
                 Snake.DIS.blit(mesg, [self.dis_W / 2 - 50, self.dis_H / 2 - 380])
             else:
                 pygame.draw.rect(self.DIS, colors.BLACK, [self.dis_W / 2 - 50, self.dis_H / 2 - 380, 560, 50])
-                mesg = self.font.render("To quit A* madness press the 'q' key", True, colors.BLUE)
+                mesg = self.font.render("To quit PHS madness press the 'q' key", True, colors.BLUE)
                 Snake.DIS.blit(mesg, [self.dis_W / 2 - 50, self.dis_H / 2 - 380])
 
             color1 = self.snakeList[0].getColor()
@@ -107,15 +107,15 @@ class Snake:
                             self.game_over = True
                             break
 
-            if self.is_a_star_mode:
-                self.a_star_madness()
+            if self.is_a_phs_mode:
+                self.phs_madness()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     Snake.game_over = True
                     break
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q and self.is_a_star_mode:
+                    if event.key == pygame.K_q and self.is_a_phs_mode:
                         self.player_failed = False
                         self.snakeList[1].setColor((0, 255, 255))
                         self.game_restart()
@@ -160,11 +160,11 @@ class Snake:
         pygame.quit()
         quit()
 
-    def a_star_madness(self):
+    def phs_madness(self):
         """
-        Enables A* play mode.
+        Enables pure heuristic search play mode.
         when the player decides, he can change the game to computer self-play mode.
-        using heuristic the computer seeks the best way to get to the piece of food by itself.
+        using pure heuristic the computer seeks for the best way to get to the piece of food by itself.
         :return:
         """
         pygame.draw.rect(Snake.DIS, colors.BLACK,
@@ -203,7 +203,7 @@ class Snake:
         player = self.snakeList[i]
 
         if event.key == pygame.K_h:
-            self.is_a_star_mode = True
+            self.is_a_phs_mode = True
 
         # player 1
         if i == 0:
@@ -292,9 +292,7 @@ class Snake:
         temp = self.snakeList[i].getTail()
         head = self.snakeList[i].getHead()
         while temp is not head and self.snakeList[i].getSize() > 2:
-            if (head.getRow() == temp.getRow()) and (head.getCol() == temp.getCol()) and not self.is_a_star_mode:
-                # if self.is_a_star_mode:
-                #     self.is_eaten = True
+            if (head.getRow() == temp.getRow()) and (head.getCol() == temp.getCol()) and not self.is_a_phs_mode:
                 self.player_failed = True
                 self.message("Loser!!!", colors.YELLOW, i)
                 break
@@ -302,7 +300,7 @@ class Snake:
 
         otherTemp = self.snakeList[1 - i].getTail()
         otherHead = self.snakeList[1 - i].getHead()
-        while otherTemp is not otherHead and self.snakeList[1 - i].getSize() > 2 and not self.is_a_star_mode:
+        while otherTemp is not otherHead and self.snakeList[1 - i].getSize() > 2 and not self.is_a_phs_mode:
             if (head.getRow() == otherTemp.getRow()) and (head.getCol() == otherTemp.getCol()):
                 self.player_failed = True
                 self.message("Loser!!!", colors.YELLOW, i)
@@ -315,7 +313,7 @@ class Snake:
         :return:
         """
         snakeLst = []
-        self.is_a_star_mode = False
+        self.is_a_phs_mode = False
         for i in range(len(self.snakeList)):
             color = self.snakeList[i].getColor()
             snake_to_add = snake_object.SnakeQ(color)
